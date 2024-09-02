@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Hangman
   attr_accessor :word, :tries, :lives
 
@@ -6,16 +8,18 @@ class Hangman
     @tries = {good: [], bad: []}
     @lives = 10
     play ? puts("You win!") : puts("You lose!")
+    puts "The word was \"#{word.join}\""
   end
 
   def play
     printWord
     loop do
-      new_letter = addLetter
-      checkLetter
-      return false if lives == 0
-      printWord
+      checkLetter(addLetter)
+      puts "Incorrect guesses: #{tries[:bad].join(", ")}\n\n"
+      return false if lives.zero?
       return true if checkWin
+
+      printWord
     end
   end
 
@@ -23,14 +27,14 @@ class Hangman
     dictionary = File.read("dictionary.txt").split("\n")
     loop do
       word = dictionary.sample
-      return word.split("") if word.length.between?(5,12) 
+      return word.split("") if word.length.between?(5, 12)
     end
   end
 
   def printWord
     print "Word: "
     word.each do |x|
-      tries.include?(x) ? print("#{x} ") : print("_ ")
+      tries[:good].include?(x) ? print("#{x} ") : print("_ ")
     end
     puts
   end
@@ -39,8 +43,8 @@ class Hangman
     begin
       print "Try a new letter: "
       letter = gets.chomp.downcase
-      raise "Error" unless letter.match /^[a-z]{1}$/ 
-    rescue
+      raise ArgumentError unless letter.match(/^[a-z]{1}$/)
+    rescue ArgumentError
       puts "Error: Invalid character"
       retry
     end
@@ -51,19 +55,16 @@ class Hangman
     return word.all? { |x| tries[:good].include? x }
   end
 
-  def checkLetter
-    if word.include?(new_letter)
-      tries[:good] << new_letter
-      puts "The letter #{new_letter} is in the word"
+  def checkLetter(letter)
+    if word.include?(letter)
+      tries[:good] << letter
+      puts "The letter \"#{letter}\" is in the word"
     else
-      tries[:bad] << new_letter
-      lives -= 1
-      return if lives == 0
-
-      puts "The letter #{new_letter} is not in the word"
-      puts "You have #{lives} lives left"
+      tries[:bad] << letter
+      self.lives -= 1
+      puts "The letter \"#{letter}\" is not in the word \nYou have #{lives} lives left"
+      return if self.lives.zero?
     end
-    puts "Incorrect guesses: #{tries[:bad].inspect}"
   end
 end
 
